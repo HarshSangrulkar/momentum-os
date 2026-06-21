@@ -40,16 +40,13 @@ function TodayPage() {
   // Fetch logs covering carousel + 30d analytics range
   const { data: logs = [] } = useLogs(ymd(last30[0]), ymd(addD(today, 3)));
 
-  const dailyTasks = useMemo(() => {
-    const list = tasks.filter((t) => t.frequency === "daily");
-    // Sort: timed first (by start_time asc), then untimed
-    return list.slice().sort((a, b) => {
+  const sortDaily = (list: typeof tasks) =>
+    list.slice().sort((a, b) => {
       if (a.start_time && b.start_time) return a.start_time.localeCompare(b.start_time);
       if (a.start_time) return -1;
       if (b.start_time) return 1;
       return 0;
     });
-  }, [tasks]);
 
   const weeklyTasks = useMemo(() => tasks.filter((t) => t.frequency === "weekly"), [tasks]);
 
