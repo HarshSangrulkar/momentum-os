@@ -361,6 +361,7 @@ function TaskRow({
   catColor,
   catName,
   timeLabel,
+  isOneOff,
   hasNote,
   onToggle,
   onNote,
@@ -372,6 +373,7 @@ function TaskRow({
   catColor?: string;
   catName?: string;
   timeLabel?: string;
+  isOneOff?: boolean;
   hasNote: boolean;
   onToggle: () => void;
   onNote: () => void;
@@ -394,6 +396,11 @@ function TaskRow({
             <span className="inline-flex shrink-0 items-center gap-1 rounded-md bg-primary/10 px-1.5 py-0.5 font-mono text-[11px] tabular-nums text-primary">
               <Clock className="h-3 w-3" />
               {timeLabel}
+            </span>
+          )}
+          {isOneOff && (
+            <span className="shrink-0 rounded-md bg-accent/40 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-accent-foreground">
+              Activity
             </span>
           )}
           <p className={`truncate font-medium ${done ? "text-muted-foreground line-through" : ""}`}>{title}</p>
