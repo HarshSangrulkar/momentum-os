@@ -1,13 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useTasks, useLogs, useCategories, useToggleTaskLog, useUpsertNote } from "@/lib/data";
-import { ymd, lastNDays, weekStart, weekEnd, fmt } from "@/lib/date-utils";
+import { ymd, lastNDays, weekStart, weekEnd, fmt, addD } from "@/lib/date-utils";
 import { scoreFor, rangeScore, currentStreak } from "@/lib/scoring";
-import { Check, Flame, NotebookPen, X } from "lucide-react";
+import { Check, Flame, NotebookPen, Clock, ChevronLeft, ChevronRight } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from "@/components/ui/carousel";
 import { toast } from "sonner";
+import { formatRange } from "./_app.goals";
+import { isSameDay } from "date-fns";
 
 export const Route = createFileRoute("/_app/today")({
   head: () => ({ meta: [{ title: "Today — Momentum" }] }),
@@ -21,11 +24,30 @@ function TodayPage() {
   const wkEnd = weekEnd();
   const last30 = lastNDays(30);
 
+  // 7-day window centered on today (3 past, today, 3 future)
+  const days = useMemo(
+    () => Array.from({ length: 7 }, (_, i) => addD(today, i - 3)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [todayKey],
+  );
+  const todayIndex = 3;
+
   const { data: tasks = [] } = useTasks();
   const { data: cats = [] } = useCategories();
-  const { data: logs = [] } = useLogs(ymd(last30[0]), todayKey);
+  // Fetch logs covering carousel + 30d analytics range
+  const { data: logs = [] } = useLogs(ymd(last30[0]), ymd(addD(today, 3)));
 
-  const dailyTasks = useMemo(() => tasks.filter((t) => t.frequency === "daily"), [tasks]);
+  const dailyTasks = useMemo(() => {
+    const list = tasks.filter((t) => t.frequency === "daily");
+    // Sort: timed first (by start_time asc), then untimed
+    return list.slice().sort((a, b) => {
+      if (a.start_time && b.start_time) return a.start_time.localeCompare(b.start_time);
+      if (a.start_time) return -1;
+      if (b.start_time) return 1;
+      return 0;
+    });
+  }, [tasks]);
+
   const weeklyTasks = useMemo(() => tasks.filter((t) => t.frequency === "weekly"), [tasks]);
 
   const dayScore = scoreFor(tasks, logs, todayKey);
@@ -47,6 +69,14 @@ function TodayPage() {
   const [noteFor, setNoteFor] = useState<{ id: string; title: string; date: string; current: string } | null>(null);
   const [noteDraft, setNoteDraft] = useState("");
 
+  const [api, setApi] = useState<CarouselApi>();
+  const [selected, setSelected] = useState(todayIndex);
+
+  useMemo(() => {
+    if (!api) return;
+    api.on("select", () => setSelected(api.selectedScrollSnap()));
+  }, [api]);
+
   const onToggle = (taskId: string, date: string, current: boolean) => {
     toggle.mutate(
       { task_id: taskId, date, completed: !current },
@@ -55,6 +85,7 @@ function TodayPage() {
   };
 
   const catFor = (id: string | null) => cats.find((c) => c.id === id);
+  const activeDay = days[selected] ?? today;
 
   return (
     <div className="mx-auto max-w-3xl px-4 pt-6 sm:px-6 sm:pt-10">
@@ -72,35 +103,115 @@ function TodayPage() {
         <StreakCard streak={streak} />
       </div>
 
-      <Section title="Daily habits">
-        {dailyTasks.length === 0 ? (
-          <EmptyState text="No daily habits yet. Add some from Goals." />
-        ) : (
-          <ul className="space-y-2">
-            {dailyTasks.map((t) => {
-              const log = logs.find((l) => l.task_id === t.id && l.log_date === todayKey);
-              const done = !!log?.completed;
-              const cat = catFor(t.category_id);
+      <section className="mb-8">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Daily habits</h2>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => api?.scrollPrev()}
+              className="rounded-full p-1.5 text-muted-foreground hover:bg-surface-2 hover:text-foreground disabled:opacity-30"
+              disabled={selected === 0}
+              aria-label="Previous day"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => api?.scrollTo(todayIndex)}
+              className="rounded-full px-2.5 py-1 text-xs text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+            >
+              Today
+            </button>
+            <button
+              onClick={() => api?.scrollNext()}
+              className="rounded-full p-1.5 text-muted-foreground hover:bg-surface-2 hover:text-foreground disabled:opacity-30"
+              disabled={selected === days.length - 1}
+              aria-label="Next day"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Day dots */}
+        <div className="mb-3 flex items-center justify-between gap-1">
+          {days.map((d, i) => {
+            const isToday = isSameDay(d, today);
+            const isActive = i === selected;
+            return (
+              <button
+                key={i}
+                onClick={() => api?.scrollTo(i)}
+                className={`flex flex-1 flex-col items-center rounded-xl py-2 transition ${
+                  isActive ? "bg-primary/10 text-foreground" : "text-muted-foreground hover:bg-surface-2"
+                }`}
+              >
+                <span className="text-[10px] font-medium uppercase tracking-wider">{fmt(d, "EEE")}</span>
+                <span className={`mt-0.5 font-display text-base font-semibold tabular-nums ${isToday ? "text-primary" : ""}`}>
+                  {fmt(d, "d")}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        <Carousel opts={{ startIndex: todayIndex, align: "start" }} setApi={setApi}>
+          <CarouselContent className="-ml-0">
+            {days.map((d) => {
+              const dKey = ymd(d);
+              const isFuture = d > today && !isSameDay(d, today);
               return (
-                <TaskRow
-                  key={t.id}
-                  title={t.title}
-                  weightage={t.weightage}
-                  done={done}
-                  catColor={cat?.color}
-                  catName={cat?.name}
-                  hasNote={!!log?.notes}
-                  onToggle={() => onToggle(t.id, todayKey, done)}
-                  onNote={() => {
-                    setNoteFor({ id: t.id, title: t.title, date: todayKey, current: log?.notes ?? "" });
-                    setNoteDraft(log?.notes ?? "");
-                  }}
-                />
+                <CarouselItem key={dKey} className="basis-full pl-0">
+                  <div className="card-soft p-3 sm:p-4">
+                    <div className="mb-3 flex items-baseline justify-between">
+                      <p className="font-display text-lg font-semibold tracking-tight">
+                        {isSameDay(d, today) ? "Today" : fmt(d, "EEEE")}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{fmt(d, "MMM d")}</p>
+                    </div>
+
+                    {dailyTasks.length === 0 ? (
+                      <p className="py-6 text-center text-sm text-muted-foreground">
+                        No daily habits yet. Add some from Goals.
+                      </p>
+                    ) : (
+                      <ul className="space-y-2">
+                        {dailyTasks.map((t) => {
+                          const log = logs.find((l) => l.task_id === t.id && l.log_date === dKey);
+                          const done = !!log?.completed;
+                          const cat = catFor(t.category_id);
+                          const timeLabel = formatRange(t.start_time, t.end_time);
+                          return (
+                            <TaskRow
+                              key={t.id}
+                              title={t.title}
+                              weightage={t.weightage}
+                              done={done}
+                              disabled={isFuture}
+                              catColor={cat?.color}
+                              catName={cat?.name}
+                              timeLabel={timeLabel}
+                              hasNote={!!log?.notes}
+                              onToggle={() => !isFuture && onToggle(t.id, dKey, done)}
+                              onNote={() => {
+                                setNoteFor({ id: t.id, title: t.title, date: dKey, current: log?.notes ?? "" });
+                                setNoteDraft(log?.notes ?? "");
+                              }}
+                            />
+                          );
+                        })}
+                      </ul>
+                    )}
+                  </div>
+                </CarouselItem>
               );
             })}
-          </ul>
-        )}
-      </Section>
+          </CarouselContent>
+        </Carousel>
+
+        <p className="mt-2 text-center text-[11px] text-muted-foreground">
+          Swipe across days · viewing {fmt(activeDay, "EEEE, MMM d")}
+        </p>
+      </section>
 
       <Section title={`This week · ${fmt(wkStart, "MMM d")} – ${fmt(wkEnd, "MMM d")}`}>
         {weeklyTasks.length === 0 ? (
@@ -223,8 +334,10 @@ function TaskRow({
   title,
   weightage,
   done,
+  disabled,
   catColor,
   catName,
+  timeLabel,
   hasNote,
   onToggle,
   onNote,
@@ -232,25 +345,36 @@ function TaskRow({
   title: string;
   weightage: number;
   done: boolean;
+  disabled?: boolean;
   catColor?: string;
   catName?: string;
+  timeLabel?: string;
   hasNote: boolean;
   onToggle: () => void;
   onNote: () => void;
 }) {
   return (
-    <li className={`card-soft group flex items-center gap-3 p-3.5 transition ${done ? "bg-success/5 border-success/30" : ""}`}>
+    <li className={`card-soft group flex items-center gap-3 p-3.5 transition ${done ? "bg-success/5 border-success/30" : ""} ${disabled ? "opacity-60" : ""}`}>
       <button
         onClick={onToggle}
+        disabled={disabled}
         aria-label={done ? "Mark incomplete" : "Mark complete"}
         className={`grid h-7 w-7 shrink-0 place-items-center rounded-full border-2 transition ${
           done ? "border-success bg-success text-success-foreground" : "border-border hover:border-primary"
-        }`}
+        } ${disabled ? "cursor-not-allowed" : ""}`}
       >
         {done ? <Check className="h-4 w-4" strokeWidth={3} /> : null}
       </button>
       <div className="min-w-0 flex-1">
-        <p className={`truncate font-medium ${done ? "text-muted-foreground line-through" : ""}`}>{title}</p>
+        <div className="flex items-baseline gap-2">
+          {timeLabel && (
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-md bg-primary/10 px-1.5 py-0.5 font-mono text-[11px] tabular-nums text-primary">
+              <Clock className="h-3 w-3" />
+              {timeLabel}
+            </span>
+          )}
+          <p className={`truncate font-medium ${done ? "text-muted-foreground line-through" : ""}`}>{title}</p>
+        </div>
         <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
           {catName && (
             <span className="inline-flex items-center gap-1">
