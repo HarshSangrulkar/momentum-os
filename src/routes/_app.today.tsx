@@ -1,11 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { useTasks, useLogs, useCategories, useToggleTaskLog, useUpsertNote } from "@/lib/data";
+import { useTasks, useLogs, useCategories, useToggleTaskLog, useUpsertNote, useCreateTask } from "@/lib/data";
 import { ymd, lastNDays, weekStart, weekEnd, fmt, addD } from "@/lib/date-utils";
-import { scoreFor, rangeScore, currentStreak } from "@/lib/scoring";
-import { Check, Flame, NotebookPen, Clock, ChevronLeft, ChevronRight } from "lucide-react";
+import { scoreFor, rangeScore, currentStreak, taskActiveOn } from "@/lib/scoring";
+import { Check, Flame, NotebookPen, Clock, ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from "@/components/ui/carousel";
 import { toast } from "sonner";
