@@ -27,7 +27,7 @@ export function useTasks() {
     queryFn: async (): Promise<Task[]> => {
       const { data, error } = await supabase
         .from("tasks")
-        .select("id,title,weightage,frequency,category_id,archived")
+        .select("id,title,weightage,frequency,category_id,archived,start_time,end_time")
         .eq("archived", false)
         .order("created_at");
       if (error) throw error;
