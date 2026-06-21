@@ -1,3 +1,4 @@
+import { parseISO } from "date-fns";
 import { ymd } from "./date-utils";
 
 export type Task = {
@@ -9,6 +10,8 @@ export type Task = {
   archived: boolean;
   start_time?: string | null;
   end_time?: string | null;
+  days_of_week?: number[] | null;
+  one_off_date?: string | null;
 };
 
 export type Log = {
@@ -18,8 +21,19 @@ export type Log = {
   notes: string | null;
 };
 
+/** Is a task scheduled / valid on the given date? */
+export function taskActiveOn(task: Task, dateKey: string): boolean {
+  if (task.archived) return false;
+  if (task.one_off_date) return task.one_off_date === dateKey;
+  if (task.frequency !== "daily") return false;
+  const dow = parseISO(dateKey).getDay(); // 0=Sun..6=Sat
+  const days = task.days_of_week;
+  if (!days || days.length === 0) return true;
+  return days.includes(dow);
+}
+
 export function scoreFor(tasks: Task[], logs: Log[], dateKey: string): number {
-  const dayTasks = tasks.filter((t) => !t.archived && t.frequency === "daily");
+  const dayTasks = tasks.filter((t) => taskActiveOn(t, dateKey));
   if (!dayTasks.length) return 0;
   const total = dayTasks.reduce((s, t) => s + t.weightage, 0);
   const done = dayTasks.reduce((s, t) => {
