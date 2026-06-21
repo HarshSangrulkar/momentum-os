@@ -301,6 +301,106 @@ function TodayPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <Dialog
+        open={!!activityFor}
+        onOpenChange={(o) => {
+          if (!o) {
+            setActivityFor(null);
+            setActivityTitle("");
+            setActivityCat("");
+            setActivityNotes("");
+          }
+        }}
+      >
+        <DialogContent className="rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="font-display">
+              Log an activity {activityFor && `· ${fmt(new Date(activityFor + "T00:00:00"), "EEE, MMM d")}`}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label className="text-xs">What did you do?</Label>
+              <Input
+                autoFocus
+                value={activityTitle}
+                onChange={(e) => setActivityTitle(e.target.value)}
+                placeholder="e.g. played badminton"
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Category (optional)</Label>
+              <Select value={activityCat} onValueChange={setActivityCat}>
+                <SelectTrigger className="mt-1"><SelectValue placeholder="Choose" /></SelectTrigger>
+                <SelectContent>
+                  {cats.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      <span className="inline-flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full" style={{ background: c.color }} />{c.name}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs">Notes (optional)</Label>
+              <Textarea
+                value={activityNotes}
+                onChange={(e) => setActivityNotes(e.target.value)}
+                placeholder="How it went, duration, reps…"
+                className="mt-1 min-h-20"
+              />
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              This won't repeat — it'll be recorded just for this day so your AI coach sees it.
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button variant="ghost" onClick={() => setActivityFor(null)}>Cancel</Button>
+              <Button
+                disabled={createTask.isPending}
+                onClick={() => {
+                  if (!activityFor) return;
+                  if (!activityTitle.trim()) return toast.error("Give it a title");
+                  const date = activityFor;
+                  createTask.mutate(
+                    {
+                      title: activityTitle.trim(),
+                      category_id: activityCat || null,
+                      weightage: 1,
+                      frequency: "daily",
+                      one_off_date: date,
+                      days_of_week: null,
+                    },
+                    {
+                      onSuccess: (res) => {
+                        toggle.mutate(
+                          { task_id: res.id, date, completed: true, notes: activityNotes || null },
+                          {
+                            onSuccess: () => {
+                              toast.success("Activity recorded");
+                              setActivityFor(null);
+                              setActivityTitle("");
+                              setActivityCat("");
+                              setActivityNotes("");
+                            },
+                            onError: (e: any) => toast.error(e.message),
+                          },
+                        );
+                      },
+                      onError: (e: any) => toast.error(e.message),
+                    },
+                  );
+                }}
+              >
+                Record
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
