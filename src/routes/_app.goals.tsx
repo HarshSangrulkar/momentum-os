@@ -132,6 +132,7 @@ function NewGoalDialog() {
   const [frequency, setFrequency] = useState<"daily" | "weekly">("daily");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
+  const [days, setDays] = useState<number[]>([0, 1, 2, 3, 4, 5, 6]);
 
   const reset = () => {
     setTitle("");
@@ -140,10 +141,15 @@ function NewGoalDialog() {
     setFrequency("daily");
     setStartTime("");
     setEndTime("");
+    setDays([0, 1, 2, 3, 4, 5, 6]);
   };
+
+  const toggleDay = (d: number) =>
+    setDays((cur) => (cur.includes(d) ? cur.filter((x) => x !== d) : [...cur, d].sort((a, b) => a - b)));
 
   const onCreate = () => {
     if (!title.trim()) return toast.error("Give it a title");
+    if (frequency === "daily" && days.length === 0) return toast.error("Pick at least one day");
     create.mutate(
       {
         title: title.trim(),
@@ -152,6 +158,7 @@ function NewGoalDialog() {
         frequency,
         start_time: startTime || null,
         end_time: endTime || null,
+        days_of_week: frequency === "daily" ? days : null,
       },
       {
         onSuccess: () => {
