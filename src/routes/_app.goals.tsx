@@ -90,6 +90,24 @@ function Empty({ msg }: { msg: string }) {
   return <li className="card-soft p-6 text-center text-sm text-muted-foreground">{msg}</li>;
 }
 
+export function formatRange(start?: string | null, end?: string | null): string {
+  const fmt = (t?: string | null) => {
+    if (!t) return null;
+    const [hStr, mStr] = t.split(":");
+    let h = parseInt(hStr, 10);
+    const m = parseInt(mStr ?? "0", 10);
+    const ap = h >= 12 ? "pm" : "am";
+    h = h % 12 || 12;
+    return m ? `${h}:${String(m).padStart(2, "0")}${ap}` : `${h}${ap}`;
+  };
+  const s = fmt(start);
+  const e = fmt(end);
+  if (s && e) return `${s}–${e}`;
+  if (s) return s;
+  if (e) return `by ${e}`;
+  return "";
+}
+
 function NewGoalDialog() {
   const { data: cats = [] } = useCategories();
   const create = useCreateTask();
@@ -98,18 +116,29 @@ function NewGoalDialog() {
   const [categoryId, setCategoryId] = useState<string>("");
   const [weightage, setWeightage] = useState(3);
   const [frequency, setFrequency] = useState<"daily" | "weekly">("daily");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
 
   const reset = () => {
     setTitle("");
     setCategoryId("");
     setWeightage(3);
     setFrequency("daily");
+    setStartTime("");
+    setEndTime("");
   };
 
   const onCreate = () => {
     if (!title.trim()) return toast.error("Give it a title");
     create.mutate(
-      { title: title.trim(), category_id: categoryId || null, weightage, frequency },
+      {
+        title: title.trim(),
+        category_id: categoryId || null,
+        weightage,
+        frequency,
+        start_time: startTime || null,
+        end_time: endTime || null,
+      },
       {
         onSuccess: () => {
           toast.success("Goal created");
@@ -162,6 +191,18 @@ function NewGoalDialog() {
               </Select>
             </div>
           </div>
+          {frequency === "daily" && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Start time (optional)</Label>
+                <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className="mt-1" />
+              </div>
+              <div>
+                <Label className="text-xs">End time (optional)</Label>
+                <Input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className="mt-1" />
+              </div>
+            </div>
+          )}
           <div>
             <Label className="text-xs">Weightage · {weightage}</Label>
             <Slider value={[weightage]} min={1} max={10} step={1} onValueChange={(v) => setWeightage(v[0])} className="mt-3" />
