@@ -103,7 +103,7 @@ export function useCreateTask() {
   const { user } = useAuth();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (t: { title: string; category_id: string | null; weightage: number; frequency: "daily" | "weekly" }) => {
+    mutationFn: async (t: { title: string; category_id: string | null; weightage: number; frequency: "daily" | "weekly"; start_time?: string | null; end_time?: string | null }) => {
       if (!user) throw new Error("not signed in");
       const { error } = await supabase.from("tasks").insert({ ...t, user_id: user.id });
       if (error) throw error;
