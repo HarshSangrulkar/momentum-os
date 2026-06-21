@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTasks, useLogs, useCategories, useToggleTaskLog, useUpsertNote } from "@/lib/data";
 import { ymd, lastNDays, weekStart, weekEnd, fmt, addD } from "@/lib/date-utils";
 import { scoreFor, rangeScore, currentStreak } from "@/lib/scoring";
@@ -72,9 +72,14 @@ function TodayPage() {
   const [api, setApi] = useState<CarouselApi>();
   const [selected, setSelected] = useState(todayIndex);
 
-  useMemo(() => {
+  useEffect(() => {
     if (!api) return;
-    api.on("select", () => setSelected(api.selectedScrollSnap()));
+    const onSelect = () => setSelected(api.selectedScrollSnap());
+    onSelect();
+    api.on("select", onSelect);
+    return () => {
+      api.off("select", onSelect);
+    };
   }, [api]);
 
   const onToggle = (taskId: string, date: string, current: boolean) => {
