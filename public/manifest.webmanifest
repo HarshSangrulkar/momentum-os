@@ -1,0 +1,13 @@
+{
+  "name": "Momentum — Personal Growth OS",
+  "short_name": "Momentum",
+  "description": "Track daily goals, build streaks, get AI coaching.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a1d24",
+  "theme_color": "#1a1d24",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
