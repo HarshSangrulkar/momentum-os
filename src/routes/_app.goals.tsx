@@ -38,12 +38,16 @@ function GoalsPage() {
         {daily.length === 0 && <Empty msg="Create your first daily habit — Gym, Steps, Water, anything you can repeat." />}
         {daily.map((t) => {
           const c = cats.find((x) => x.id === t.category_id);
+          const time = formatRange(t.start_time, t.end_time);
           return (
             <li key={t.id} className="card-soft flex items-center gap-3 p-3.5">
               <span className="h-2.5 w-2.5 rounded-full" style={{ background: c?.color ?? "#888" }} />
               <div className="flex-1">
                 <p className="font-medium">{t.title}</p>
-                <p className="text-xs text-muted-foreground">{c?.name ?? "Uncategorized"} · weight {t.weightage}</p>
+                <p className="text-xs text-muted-foreground">
+                  {time && <span className="mr-1 font-mono text-foreground/70">{time}</span>}
+                  {c?.name ?? "Uncategorized"} · weight {t.weightage}
+                </p>
               </div>
               <button
                 onClick={() => archive.mutate(t.id, { onError: (e: any) => toast.error(e.message) })}
