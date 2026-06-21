@@ -164,23 +164,25 @@ function TodayPage() {
             {days.map((d) => {
               const dKey = ymd(d);
               const isFuture = d > today && !isSameDay(d, today);
+              const isTodayCard = isSameDay(d, today);
+              const dayTasks = sortDaily(tasks.filter((t) => taskActiveOn(t, dKey)));
               return (
                 <CarouselItem key={dKey} className="basis-full pl-0">
                   <div className="card-soft p-3 sm:p-4">
                     <div className="mb-3 flex items-baseline justify-between">
                       <p className="font-display text-lg font-semibold tracking-tight">
-                        {isSameDay(d, today) ? "Today" : fmt(d, "EEEE")}
+                        {isTodayCard ? "Today" : fmt(d, "EEEE")}
                       </p>
                       <p className="text-xs text-muted-foreground">{fmt(d, "MMM d")}</p>
                     </div>
 
-                    {dailyTasks.length === 0 ? (
+                    {dayTasks.length === 0 ? (
                       <p className="py-6 text-center text-sm text-muted-foreground">
-                        No daily habits yet. Add some from Goals.
+                        Nothing scheduled for {fmt(d, "EEEE")}.
                       </p>
                     ) : (
                       <ul className="space-y-2">
-                        {dailyTasks.map((t) => {
+                        {dayTasks.map((t) => {
                           const log = logs.find((l) => l.task_id === t.id && l.log_date === dKey);
                           const done = !!log?.completed;
                           const cat = catFor(t.category_id);
@@ -195,6 +197,7 @@ function TodayPage() {
                               catColor={cat?.color}
                               catName={cat?.name}
                               timeLabel={timeLabel}
+                              isOneOff={!!t.one_off_date}
                               hasNote={!!log?.notes}
                               onToggle={() => !isFuture && onToggle(t.id, dKey, done)}
                               onNote={() => {
@@ -205,6 +208,15 @@ function TodayPage() {
                           );
                         })}
                       </ul>
+                    )}
+
+                    {!isFuture && (
+                      <button
+                        onClick={() => setActivityFor(dKey)}
+                        className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-border py-2.5 text-xs font-medium text-muted-foreground transition hover:border-primary/60 hover:bg-primary/5 hover:text-primary"
+                      >
+                        <Plus className="h-3.5 w-3.5" /> Add activity for {isTodayCard ? "today" : fmt(d, "EEE")}
+                      </button>
                     )}
                   </div>
                 </CarouselItem>
