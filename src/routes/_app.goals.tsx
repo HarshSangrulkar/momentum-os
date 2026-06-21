@@ -109,6 +109,19 @@ export function formatRange(start?: string | null, end?: string | null): string 
   return "";
 }
 
+const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+export function formatDays(days?: number[] | null): string {
+  if (!days || days.length === 0 || days.length === 7) return "Every day";
+  const weekdays = [1, 2, 3, 4, 5];
+  const weekend = [0, 6];
+  const sorted = [...days].sort((a, b) => a - b);
+  const eq = (a: number[], b: number[]) => a.length === b.length && a.every((v, i) => v === b[i]);
+  if (eq(sorted, weekdays)) return "Weekdays";
+  if (eq(sorted, weekend)) return "Weekends";
+  return sorted.map((d) => DAY_LABELS[d]).join(" · ");
+}
+
 function NewGoalDialog() {
   const { data: cats = [] } = useCategories();
   const create = useCreateTask();
