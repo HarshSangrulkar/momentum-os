@@ -27,7 +27,7 @@ export function useTasks() {
     queryFn: async (): Promise<Task[]> => {
       const { data, error } = await supabase
         .from("tasks")
-        .select("id,title,weightage,frequency,category_id,archived,start_time,end_time")
+        .select("id,title,weightage,frequency,category_id,archived,start_time,end_time,days_of_week,one_off_date")
         .eq("archived", false)
         .order("created_at");
       if (error) throw error;
@@ -103,10 +103,11 @@ export function useCreateTask() {
   const { user } = useAuth();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (t: { title: string; category_id: string | null; weightage: number; frequency: "daily" | "weekly"; start_time?: string | null; end_time?: string | null }) => {
+    mutationFn: async (t: { title: string; category_id: string | null; weightage: number; frequency: "daily" | "weekly"; start_time?: string | null; end_time?: string | null; days_of_week?: number[] | null; one_off_date?: string | null }): Promise<{ id: string }> => {
       if (!user) throw new Error("not signed in");
-      const { error } = await supabase.from("tasks").insert({ ...t, user_id: user.id });
+      const { data, error } = await supabase.from("tasks").insert({ ...t, user_id: user.id }).select("id").single();
       if (error) throw error;
+      return data as { id: string };
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["tasks"] }),
   });

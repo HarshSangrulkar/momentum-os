@@ -1,11 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { useTasks, useLogs, useCategories, useToggleTaskLog, useUpsertNote } from "@/lib/data";
+import { useTasks, useLogs, useCategories, useToggleTaskLog, useUpsertNote, useCreateTask } from "@/lib/data";
 import { ymd, lastNDays, weekStart, weekEnd, fmt, addD } from "@/lib/date-utils";
-import { scoreFor, rangeScore, currentStreak } from "@/lib/scoring";
-import { Check, Flame, NotebookPen, Clock, ChevronLeft, ChevronRight } from "lucide-react";
+import { scoreFor, rangeScore, currentStreak, taskActiveOn } from "@/lib/scoring";
+import { Check, Flame, NotebookPen, Clock, ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from "@/components/ui/carousel";
 import { toast } from "sonner";
@@ -37,16 +40,13 @@ function TodayPage() {
   // Fetch logs covering carousel + 30d analytics range
   const { data: logs = [] } = useLogs(ymd(last30[0]), ymd(addD(today, 3)));
 
-  const dailyTasks = useMemo(() => {
-    const list = tasks.filter((t) => t.frequency === "daily");
-    // Sort: timed first (by start_time asc), then untimed
-    return list.slice().sort((a, b) => {
+  const sortDaily = (list: typeof tasks) =>
+    list.slice().sort((a, b) => {
       if (a.start_time && b.start_time) return a.start_time.localeCompare(b.start_time);
       if (a.start_time) return -1;
       if (b.start_time) return 1;
       return 0;
     });
-  }, [tasks]);
 
   const weeklyTasks = useMemo(() => tasks.filter((t) => t.frequency === "weekly"), [tasks]);
 
@@ -65,9 +65,15 @@ function TodayPage() {
 
   const toggle = useToggleTaskLog();
   const upsertNote = useUpsertNote();
+  const createTask = useCreateTask();
 
   const [noteFor, setNoteFor] = useState<{ id: string; title: string; date: string; current: string } | null>(null);
   const [noteDraft, setNoteDraft] = useState("");
+
+  const [activityFor, setActivityFor] = useState<string | null>(null);
+  const [activityTitle, setActivityTitle] = useState("");
+  const [activityCat, setActivityCat] = useState("");
+  const [activityNotes, setActivityNotes] = useState("");
 
   const [api, setApi] = useState<CarouselApi>();
   const [selected, setSelected] = useState(todayIndex);
@@ -164,23 +170,25 @@ function TodayPage() {
             {days.map((d) => {
               const dKey = ymd(d);
               const isFuture = d > today && !isSameDay(d, today);
+              const isTodayCard = isSameDay(d, today);
+              const dayTasks = sortDaily(tasks.filter((t) => taskActiveOn(t, dKey)));
               return (
                 <CarouselItem key={dKey} className="basis-full pl-0">
                   <div className="card-soft p-3 sm:p-4">
                     <div className="mb-3 flex items-baseline justify-between">
                       <p className="font-display text-lg font-semibold tracking-tight">
-                        {isSameDay(d, today) ? "Today" : fmt(d, "EEEE")}
+                        {isTodayCard ? "Today" : fmt(d, "EEEE")}
                       </p>
                       <p className="text-xs text-muted-foreground">{fmt(d, "MMM d")}</p>
                     </div>
 
-                    {dailyTasks.length === 0 ? (
+                    {dayTasks.length === 0 ? (
                       <p className="py-6 text-center text-sm text-muted-foreground">
-                        No daily habits yet. Add some from Goals.
+                        Nothing scheduled for {fmt(d, "EEEE")}.
                       </p>
                     ) : (
                       <ul className="space-y-2">
-                        {dailyTasks.map((t) => {
+                        {dayTasks.map((t) => {
                           const log = logs.find((l) => l.task_id === t.id && l.log_date === dKey);
                           const done = !!log?.completed;
                           const cat = catFor(t.category_id);
@@ -195,6 +203,7 @@ function TodayPage() {
                               catColor={cat?.color}
                               catName={cat?.name}
                               timeLabel={timeLabel}
+                              isOneOff={!!t.one_off_date}
                               hasNote={!!log?.notes}
                               onToggle={() => !isFuture && onToggle(t.id, dKey, done)}
                               onNote={() => {
@@ -205,6 +214,15 @@ function TodayPage() {
                           );
                         })}
                       </ul>
+                    )}
+
+                    {!isFuture && (
+                      <button
+                        onClick={() => setActivityFor(dKey)}
+                        className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-border py-2.5 text-xs font-medium text-muted-foreground transition hover:border-primary/60 hover:bg-primary/5 hover:text-primary"
+                      >
+                        <Plus className="h-3.5 w-3.5" /> Add activity for {isTodayCard ? "today" : fmt(d, "EEE")}
+                      </button>
                     )}
                   </div>
                 </CarouselItem>
@@ -283,6 +301,106 @@ function TodayPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <Dialog
+        open={!!activityFor}
+        onOpenChange={(o) => {
+          if (!o) {
+            setActivityFor(null);
+            setActivityTitle("");
+            setActivityCat("");
+            setActivityNotes("");
+          }
+        }}
+      >
+        <DialogContent className="rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="font-display">
+              Log an activity {activityFor && `· ${fmt(new Date(activityFor + "T00:00:00"), "EEE, MMM d")}`}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label className="text-xs">What did you do?</Label>
+              <Input
+                autoFocus
+                value={activityTitle}
+                onChange={(e) => setActivityTitle(e.target.value)}
+                placeholder="e.g. played badminton"
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Category (optional)</Label>
+              <Select value={activityCat} onValueChange={setActivityCat}>
+                <SelectTrigger className="mt-1"><SelectValue placeholder="Choose" /></SelectTrigger>
+                <SelectContent>
+                  {cats.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      <span className="inline-flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full" style={{ background: c.color }} />{c.name}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs">Notes (optional)</Label>
+              <Textarea
+                value={activityNotes}
+                onChange={(e) => setActivityNotes(e.target.value)}
+                placeholder="How it went, duration, reps…"
+                className="mt-1 min-h-20"
+              />
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              This won't repeat — it'll be recorded just for this day so your AI coach sees it.
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button variant="ghost" onClick={() => setActivityFor(null)}>Cancel</Button>
+              <Button
+                disabled={createTask.isPending}
+                onClick={() => {
+                  if (!activityFor) return;
+                  if (!activityTitle.trim()) return toast.error("Give it a title");
+                  const date = activityFor;
+                  createTask.mutate(
+                    {
+                      title: activityTitle.trim(),
+                      category_id: activityCat || null,
+                      weightage: 1,
+                      frequency: "daily",
+                      one_off_date: date,
+                      days_of_week: null,
+                    },
+                    {
+                      onSuccess: (res) => {
+                        toggle.mutate(
+                          { task_id: res.id, date, completed: true, notes: activityNotes || null },
+                          {
+                            onSuccess: () => {
+                              toast.success("Activity recorded");
+                              setActivityFor(null);
+                              setActivityTitle("");
+                              setActivityCat("");
+                              setActivityNotes("");
+                            },
+                            onError: (e: any) => toast.error(e.message),
+                          },
+                        );
+                      },
+                      onError: (e: any) => toast.error(e.message),
+                    },
+                  );
+                }}
+              >
+                Record
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -343,6 +461,7 @@ function TaskRow({
   catColor,
   catName,
   timeLabel,
+  isOneOff,
   hasNote,
   onToggle,
   onNote,
@@ -354,6 +473,7 @@ function TaskRow({
   catColor?: string;
   catName?: string;
   timeLabel?: string;
+  isOneOff?: boolean;
   hasNote: boolean;
   onToggle: () => void;
   onNote: () => void;
@@ -376,6 +496,11 @@ function TaskRow({
             <span className="inline-flex shrink-0 items-center gap-1 rounded-md bg-primary/10 px-1.5 py-0.5 font-mono text-[11px] tabular-nums text-primary">
               <Clock className="h-3 w-3" />
               {timeLabel}
+            </span>
+          )}
+          {isOneOff && (
+            <span className="shrink-0 rounded-md bg-accent/40 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-accent-foreground">
+              Activity
             </span>
           )}
           <p className={`truncate font-medium ${done ? "text-muted-foreground line-through" : ""}`}>{title}</p>

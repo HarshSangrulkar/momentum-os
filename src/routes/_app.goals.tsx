@@ -39,6 +39,7 @@ function GoalsPage() {
         {daily.map((t) => {
           const c = cats.find((x) => x.id === t.category_id);
           const time = formatRange(t.start_time, t.end_time);
+          const days = formatDays(t.days_of_week);
           return (
             <li key={t.id} className="card-soft flex items-center gap-3 p-3.5">
               <span className="h-2.5 w-2.5 rounded-full" style={{ background: c?.color ?? "#888" }} />
@@ -46,7 +47,7 @@ function GoalsPage() {
                 <p className="font-medium">{t.title}</p>
                 <p className="text-xs text-muted-foreground">
                   {time && <span className="mr-1 font-mono text-foreground/70">{time}</span>}
-                  {c?.name ?? "Uncategorized"} · weight {t.weightage}
+                  {c?.name ?? "Uncategorized"} · {days} · weight {t.weightage}
                 </p>
               </div>
               <button
@@ -108,6 +109,19 @@ export function formatRange(start?: string | null, end?: string | null): string 
   return "";
 }
 
+const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+export function formatDays(days?: number[] | null): string {
+  if (!days || days.length === 0 || days.length === 7) return "Every day";
+  const weekdays = [1, 2, 3, 4, 5];
+  const weekend = [0, 6];
+  const sorted = [...days].sort((a, b) => a - b);
+  const eq = (a: number[], b: number[]) => a.length === b.length && a.every((v, i) => v === b[i]);
+  if (eq(sorted, weekdays)) return "Weekdays";
+  if (eq(sorted, weekend)) return "Weekends";
+  return sorted.map((d) => DAY_LABELS[d]).join(" · ");
+}
+
 function NewGoalDialog() {
   const { data: cats = [] } = useCategories();
   const create = useCreateTask();
@@ -118,6 +132,7 @@ function NewGoalDialog() {
   const [frequency, setFrequency] = useState<"daily" | "weekly">("daily");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
+  const [days, setDays] = useState<number[]>([0, 1, 2, 3, 4, 5, 6]);
 
   const reset = () => {
     setTitle("");
@@ -126,10 +141,15 @@ function NewGoalDialog() {
     setFrequency("daily");
     setStartTime("");
     setEndTime("");
+    setDays([0, 1, 2, 3, 4, 5, 6]);
   };
+
+  const toggleDay = (d: number) =>
+    setDays((cur) => (cur.includes(d) ? cur.filter((x) => x !== d) : [...cur, d].sort((a, b) => a - b)));
 
   const onCreate = () => {
     if (!title.trim()) return toast.error("Give it a title");
+    if (frequency === "daily" && days.length === 0) return toast.error("Pick at least one day");
     create.mutate(
       {
         title: title.trim(),
@@ -138,6 +158,7 @@ function NewGoalDialog() {
         frequency,
         start_time: startTime || null,
         end_time: endTime || null,
+        days_of_week: frequency === "daily" ? days : null,
       },
       {
         onSuccess: () => {
@@ -192,16 +213,47 @@ function NewGoalDialog() {
             </div>
           </div>
           {frequency === "daily" && (
-            <div className="grid grid-cols-2 gap-3">
+            <>
               <div>
-                <Label className="text-xs">Start time (optional)</Label>
-                <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className="mt-1" />
+                <Label className="text-xs">Repeat on</Label>
+                <div className="mt-1.5 flex gap-1.5">
+                  {DAY_LABELS.map((lbl, i) => {
+                    const on = days.includes(i);
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => toggleDay(i)}
+                        className={`grid h-9 flex-1 place-items-center rounded-lg border text-xs font-medium transition ${
+                          on
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-border bg-transparent text-muted-foreground hover:border-primary/50"
+                        }`}
+                      >
+                        {lbl[0]}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="mt-1.5 flex gap-2 text-[11px]">
+                  <button type="button" className="text-muted-foreground hover:text-primary" onClick={() => setDays([0, 1, 2, 3, 4, 5, 6])}>Every day</button>
+                  <span className="text-muted-foreground">·</span>
+                  <button type="button" className="text-muted-foreground hover:text-primary" onClick={() => setDays([1, 2, 3, 4, 5])}>Weekdays</button>
+                  <span className="text-muted-foreground">·</span>
+                  <button type="button" className="text-muted-foreground hover:text-primary" onClick={() => setDays([0, 6])}>Weekends</button>
+                </div>
               </div>
-              <div>
-                <Label className="text-xs">End time (optional)</Label>
-                <Input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className="mt-1" />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs">Start time (optional)</Label>
+                  <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className="mt-1" />
+                </div>
+                <div>
+                  <Label className="text-xs">End time (optional)</Label>
+                  <Input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className="mt-1" />
+                </div>
               </div>
-            </div>
+            </>
           )}
           <div>
             <Label className="text-xs">Weightage · {weightage}</Label>

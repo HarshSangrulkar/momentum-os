@@ -191,9 +191,11 @@ export type Database = {
           archived: boolean
           category_id: string | null
           created_at: string
+          days_of_week: number[] | null
           end_time: string | null
           frequency: Database["public"]["Enums"]["task_frequency"]
           id: string
+          one_off_date: string | null
           start_time: string | null
           title: string
           user_id: string
@@ -203,9 +205,11 @@ export type Database = {
           archived?: boolean
           category_id?: string | null
           created_at?: string
+          days_of_week?: number[] | null
           end_time?: string | null
           frequency?: Database["public"]["Enums"]["task_frequency"]
           id?: string
+          one_off_date?: string | null
           start_time?: string | null
           title: string
           user_id: string
@@ -215,9 +219,11 @@ export type Database = {
           archived?: boolean
           category_id?: string | null
           created_at?: string
+          days_of_week?: number[] | null
           end_time?: string | null
           frequency?: Database["public"]["Enums"]["task_frequency"]
           id?: string
+          one_off_date?: string | null
           start_time?: string | null
           title?: string
           user_id?: string
