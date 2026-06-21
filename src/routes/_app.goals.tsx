@@ -213,16 +213,47 @@ function NewGoalDialog() {
             </div>
           </div>
           {frequency === "daily" && (
-            <div className="grid grid-cols-2 gap-3">
+            <>
               <div>
-                <Label className="text-xs">Start time (optional)</Label>
-                <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className="mt-1" />
+                <Label className="text-xs">Repeat on</Label>
+                <div className="mt-1.5 flex gap-1.5">
+                  {DAY_LABELS.map((lbl, i) => {
+                    const on = days.includes(i);
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => toggleDay(i)}
+                        className={`grid h-9 flex-1 place-items-center rounded-lg border text-xs font-medium transition ${
+                          on
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-border bg-transparent text-muted-foreground hover:border-primary/50"
+                        }`}
+                      >
+                        {lbl[0]}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="mt-1.5 flex gap-2 text-[11px]">
+                  <button type="button" className="text-muted-foreground hover:text-primary" onClick={() => setDays([0, 1, 2, 3, 4, 5, 6])}>Every day</button>
+                  <span className="text-muted-foreground">·</span>
+                  <button type="button" className="text-muted-foreground hover:text-primary" onClick={() => setDays([1, 2, 3, 4, 5])}>Weekdays</button>
+                  <span className="text-muted-foreground">·</span>
+                  <button type="button" className="text-muted-foreground hover:text-primary" onClick={() => setDays([0, 6])}>Weekends</button>
+                </div>
               </div>
-              <div>
-                <Label className="text-xs">End time (optional)</Label>
-                <Input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className="mt-1" />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs">Start time (optional)</Label>
+                  <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className="mt-1" />
+                </div>
+                <div>
+                  <Label className="text-xs">End time (optional)</Label>
+                  <Input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className="mt-1" />
+                </div>
               </div>
-            </div>
+            </>
           )}
           <div>
             <Label className="text-xs">Weightage · {weightage}</Label>
