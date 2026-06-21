@@ -39,6 +39,7 @@ function GoalsPage() {
         {daily.map((t) => {
           const c = cats.find((x) => x.id === t.category_id);
           const time = formatRange(t.start_time, t.end_time);
+          const days = formatDays(t.days_of_week);
           return (
             <li key={t.id} className="card-soft flex items-center gap-3 p-3.5">
               <span className="h-2.5 w-2.5 rounded-full" style={{ background: c?.color ?? "#888" }} />
@@ -46,7 +47,7 @@ function GoalsPage() {
                 <p className="font-medium">{t.title}</p>
                 <p className="text-xs text-muted-foreground">
                   {time && <span className="mr-1 font-mono text-foreground/70">{time}</span>}
-                  {c?.name ?? "Uncategorized"} · weight {t.weightage}
+                  {c?.name ?? "Uncategorized"} · {days} · weight {t.weightage}
                 </p>
               </div>
               <button
