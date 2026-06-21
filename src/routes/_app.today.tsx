@@ -65,9 +65,15 @@ function TodayPage() {
 
   const toggle = useToggleTaskLog();
   const upsertNote = useUpsertNote();
+  const createTask = useCreateTask();
 
   const [noteFor, setNoteFor] = useState<{ id: string; title: string; date: string; current: string } | null>(null);
   const [noteDraft, setNoteDraft] = useState("");
+
+  const [activityFor, setActivityFor] = useState<string | null>(null);
+  const [activityTitle, setActivityTitle] = useState("");
+  const [activityCat, setActivityCat] = useState("");
+  const [activityNotes, setActivityNotes] = useState("");
 
   const [api, setApi] = useState<CarouselApi>();
   const [selected, setSelected] = useState(todayIndex);
