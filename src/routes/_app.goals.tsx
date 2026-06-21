@@ -38,12 +38,16 @@ function GoalsPage() {
         {daily.length === 0 && <Empty msg="Create your first daily habit — Gym, Steps, Water, anything you can repeat." />}
         {daily.map((t) => {
           const c = cats.find((x) => x.id === t.category_id);
+          const time = formatRange(t.start_time, t.end_time);
           return (
             <li key={t.id} className="card-soft flex items-center gap-3 p-3.5">
               <span className="h-2.5 w-2.5 rounded-full" style={{ background: c?.color ?? "#888" }} />
               <div className="flex-1">
                 <p className="font-medium">{t.title}</p>
-                <p className="text-xs text-muted-foreground">{c?.name ?? "Uncategorized"} · weight {t.weightage}</p>
+                <p className="text-xs text-muted-foreground">
+                  {time && <span className="mr-1 font-mono text-foreground/70">{time}</span>}
+                  {c?.name ?? "Uncategorized"} · weight {t.weightage}
+                </p>
               </div>
               <button
                 onClick={() => archive.mutate(t.id, { onError: (e: any) => toast.error(e.message) })}
@@ -86,6 +90,24 @@ function Empty({ msg }: { msg: string }) {
   return <li className="card-soft p-6 text-center text-sm text-muted-foreground">{msg}</li>;
 }
 
+export function formatRange(start?: string | null, end?: string | null): string {
+  const fmt = (t?: string | null) => {
+    if (!t) return null;
+    const [hStr, mStr] = t.split(":");
+    let h = parseInt(hStr, 10);
+    const m = parseInt(mStr ?? "0", 10);
+    const ap = h >= 12 ? "pm" : "am";
+    h = h % 12 || 12;
+    return m ? `${h}:${String(m).padStart(2, "0")}${ap}` : `${h}${ap}`;
+  };
+  const s = fmt(start);
+  const e = fmt(end);
+  if (s && e) return `${s}–${e}`;
+  if (s) return s;
+  if (e) return `by ${e}`;
+  return "";
+}
+
 function NewGoalDialog() {
   const { data: cats = [] } = useCategories();
   const create = useCreateTask();
@@ -94,18 +116,29 @@ function NewGoalDialog() {
   const [categoryId, setCategoryId] = useState<string>("");
   const [weightage, setWeightage] = useState(3);
   const [frequency, setFrequency] = useState<"daily" | "weekly">("daily");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
 
   const reset = () => {
     setTitle("");
     setCategoryId("");
     setWeightage(3);
     setFrequency("daily");
+    setStartTime("");
+    setEndTime("");
   };
 
   const onCreate = () => {
     if (!title.trim()) return toast.error("Give it a title");
     create.mutate(
-      { title: title.trim(), category_id: categoryId || null, weightage, frequency },
+      {
+        title: title.trim(),
+        category_id: categoryId || null,
+        weightage,
+        frequency,
+        start_time: startTime || null,
+        end_time: endTime || null,
+      },
       {
         onSuccess: () => {
           toast.success("Goal created");
@@ -158,6 +191,18 @@ function NewGoalDialog() {
               </Select>
             </div>
           </div>
+          {frequency === "daily" && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Start time (optional)</Label>
+                <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className="mt-1" />
+              </div>
+              <div>
+                <Label className="text-xs">End time (optional)</Label>
+                <Input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className="mt-1" />
+              </div>
+            </div>
+          )}
           <div>
             <Label className="text-xs">Weightage · {weightage}</Label>
             <Slider value={[weightage]} min={1} max={10} step={1} onValueChange={(v) => setWeightage(v[0])} className="mt-3" />
