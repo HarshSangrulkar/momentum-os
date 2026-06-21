@@ -7,6 +7,8 @@ export type Task = {
   frequency: "daily" | "weekly";
   category_id: string | null;
   archived: boolean;
+  start_time?: string | null;
+  end_time?: string | null;
 };
 
 export type Log = {
