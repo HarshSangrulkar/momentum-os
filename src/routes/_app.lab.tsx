@@ -319,6 +319,22 @@ function ExperimentsTab() {
                     Conclude
                   </Button>
                 )}
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => {
+                    if (confirm(`Delete experiment "${e.title}"? This cannot be undone.`)) {
+                      del.mutate(e.id, {
+                        onSuccess: () => toast.success("Experiment deleted"),
+                        onError: (err: any) => toast.error(err.message),
+                      });
+                    }
+                  }}
+                  aria-label="Delete experiment"
+                  className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </div>
               {e.conclusion && (
                 <div className="mt-3 rounded-xl border border-border bg-surface-2 p-3 text-sm leading-relaxed">
