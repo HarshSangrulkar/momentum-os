@@ -1,12 +1,16 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/auth";
 import { useTheme } from "@/lib/theme";
 import { useCategories, useCreateCategory, useDeleteCategory } from "@/lib/data";
+import { useNotifPrefs, useUpsertNotifPrefs } from "@/lib/intel-data";
+import { generateWeeklyReport } from "@/lib/intelligence.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LogOut, Plus, Sun, Moon, Trash2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { LogOut, Plus, Sun, Moon, Trash2, Bell, FileText, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/settings")({
