@@ -203,3 +203,59 @@ function Sparkline({ values, className }: { values: number[]; className?: string
     </svg>
   );
 }
+
+function GoalsCarousel({ goals }: { goals: ReturnType<typeof useLongTermGoals>["data"] extends (infer T)[] | undefined ? T[] : never }) {
+  const [api, setApi] = useState<CarouselApi>();
+  useEffect(() => {
+    if (!api || goals.length < 2) return;
+    const id = setInterval(() => {
+      if (!api) return;
+      if (api.canScrollNext()) api.scrollNext();
+      else api.scrollTo(0);
+    }, 2000);
+    return () => clearInterval(id);
+  }, [api, goals.length]);
+
+  return (
+    <Carousel opts={{ loop: true, align: "start" }} setApi={setApi}>
+      <CarouselContent className="-ml-0">
+        {goals.map((g) => {
+          const target = g.target_metric?.target as number | undefined;
+          const current = g.target_metric?.current ?? 0;
+          const pct = target ? Math.min(100, Math.round((current / target) * 100)) : null;
+          return (
+            <CarouselItem key={g.id} className="basis-full pl-0">
+              <Link to="/longterm" className="card-soft block p-4 hover:bg-surface-2">
+                <div className="flex items-center gap-3">
+                  <Target className="h-5 w-5 shrink-0 text-primary" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-display text-base font-semibold">{g.title}</p>
+                    {pct !== null ? (
+                      <>
+                        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted">
+                          <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${pct}%` }} />
+                        </div>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {current} / {target} {g.target_metric?.unit ?? ""} · {pct}%
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">No target metric set</p>
+                    )}
+                  </div>
+                </div>
+              </Link>
+            </CarouselItem>
+          );
+        })}
+      </CarouselContent>
+      {goals.length > 1 && (
+        <div className="mt-2 flex justify-center gap-1">
+          {goals.map((_, i) => (
+            <span key={i} className="h-1 w-4 rounded-full bg-muted" />
+          ))}
+        </div>
+      )}
+    </Carousel>
+  );
+}
