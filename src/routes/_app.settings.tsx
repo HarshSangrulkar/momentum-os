@@ -101,6 +101,44 @@ function SettingsPage() {
       </section>
 
       <section className="card-soft mt-4 p-5">
+        <p className="text-xs uppercase tracking-wider text-muted-foreground">Intelligence</p>
+        <div className="mt-3 flex items-center justify-between rounded-xl border border-border bg-surface-2 p-3">
+          <div className="flex items-center gap-3">
+            <Bell className="h-5 w-5 text-primary" />
+            <div>
+              <p className="font-medium">Smart nudges</p>
+              <p className="text-xs text-muted-foreground">Context-aware, not generic reminders.</p>
+            </div>
+          </div>
+          <Switch
+            checked={notif?.smart_nudges ?? true}
+            onCheckedChange={(v) => upsertNotif.mutate({ smart_nudges: v })}
+          />
+        </div>
+        <div className="mt-2 flex items-center justify-between rounded-xl border border-border bg-surface-2 p-3">
+          <div className="flex items-center gap-3">
+            <FileText className="h-5 w-5 text-primary" />
+            <div>
+              <p className="font-medium">Weekly report</p>
+              <p className="text-xs text-muted-foreground">AI-written review every Sunday.</p>
+            </div>
+          </div>
+          <Switch
+            checked={notif?.weekly_report ?? true}
+            onCheckedChange={(v) => upsertNotif.mutate({ weekly_report: v })}
+          />
+        </div>
+        <Button variant="outline" onClick={requestNotifPerm} className="mt-3 w-full rounded-full">
+          Enable browser notifications
+        </Button>
+        <Button onClick={triggerWeekly} disabled={reportBusy} className="mt-2 w-full rounded-full">
+          {reportBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+          Generate weekly report now
+        </Button>
+      </section>
+
+
+      <section className="card-soft mt-4 p-5">
         <p className="text-xs uppercase tracking-wider text-muted-foreground">Categories</p>
         <ul className="mt-3 space-y-2">
           {cats.map((c) => (
