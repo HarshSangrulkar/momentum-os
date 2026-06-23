@@ -198,6 +198,7 @@ function RealityGapTab() {
 function ExperimentsTab() {
   const { data: experiments = [] } = useExperiments();
   const create = useCreateExperiment();
+  const del = useDeleteExperiment();
   const conclude = useServerFn(concludeExperiment);
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
