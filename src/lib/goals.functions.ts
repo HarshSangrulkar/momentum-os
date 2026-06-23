@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { generateText, Output } from "ai";
+import { generateText } from "ai";
 import { z } from "zod";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
 
@@ -11,19 +11,17 @@ function getModel() {
 }
 
 const DecompositionSchema = z.object({
-  months: z
-    .array(
-      z.object({
-        title: z.string(),
-        weeks: z.array(
-          z.object({
-            title: z.string(),
-            days: z.array(z.string()).max(5),
-          }),
-        ).max(4),
-      }),
-    )
-    .max(6),
+  months: z.array(
+    z.object({
+      title: z.string(),
+      weeks: z.array(
+        z.object({
+          title: z.string(),
+          days: z.array(z.string()),
+        }),
+      ),
+    }),
+  ),
 });
 
 export const decomposeGoal = createServerFn({ method: "POST" })
@@ -41,17 +39,19 @@ export const decomposeGoal = createServerFn({ method: "POST" })
 
     let decomposition: z.infer<typeof DecompositionSchema>;
     try {
-      const { experimental_output } = await generateText({
+      const { text } = await generateText({
         model: getModel(),
-        experimental_output: Output.object({ schema: DecompositionSchema }),
-        system: "You are an expert goal architect. Break long-term goals into 2-3 month milestones, each into 2-4 week objectives, each into 3-5 concrete daily actions a person can do. Be specific and grounded. No fluff.",
+        system: `You are an expert goal architect. Break long-term goals into 2-3 month milestones, each with 2-4 week objectives, each with 3-5 concrete daily actions. Reply with ONLY a valid JSON object — no markdown fences, no commentary — matching this shape:
+{"months":[{"title":"...","weeks":[{"title":"...","days":["...","..."]}]}]}`,
         prompt: `Goal: ${data.title}
 ${data.description ? `Description: ${data.description}` : ""}
 ${data.target_date ? `Target date: ${data.target_date}` : ""}
 
-Produce a structured month → week → day breakdown.`,
+Output JSON only.`,
       });
-      decomposition = experimental_output;
+      // Strip any code fences just in case
+      const cleaned = text.trim().replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```$/, "").trim();
+      decomposition = DecompositionSchema.parse(JSON.parse(cleaned));
     } catch (e: any) {
       throw new Error(`AI decomposition failed: ${e?.message ?? "unknown error"}`);
     }
