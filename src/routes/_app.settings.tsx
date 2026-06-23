@@ -27,9 +27,36 @@ function SettingsPage() {
   const create = useCreateCategory();
   const del = useDeleteCategory();
   const navigate = useNavigate();
+  const { data: notif } = useNotifPrefs();
+  const upsertNotif = useUpsertNotifPrefs();
+  const runWeekly = useServerFn(generateWeeklyReport);
+  const [reportBusy, setReportBusy] = useState(false);
 
   const [name, setName] = useState("");
   const [color, setColor] = useState(PALETTE[0]);
+
+  const triggerWeekly = async () => {
+    setReportBusy(true);
+    try {
+      await runWeekly();
+      toast.success("Weekly report ready — see Reports");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed");
+    } finally {
+      setReportBusy(false);
+    }
+  };
+
+  const requestNotifPerm = async () => {
+    if (typeof Notification === "undefined") return toast.error("Browser notifications not supported");
+    const res = await Notification.requestPermission();
+    if (res === "granted") {
+      new Notification("Momentum", { body: "Smart nudges are on. I'll only ping when it matters." });
+      toast.success("Notifications enabled");
+    } else {
+      toast.error("Permission denied");
+    }
+  };
 
   const onLogout = async () => {
     await signOut();
