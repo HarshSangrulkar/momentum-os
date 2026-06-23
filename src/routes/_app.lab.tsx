@@ -7,10 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { useInsights, useDismissInsight, useExperiments, useCreateExperiment } from "@/lib/intel-data";
+import { useInsights, useDismissInsight, useExperiments, useCreateExperiment, useDeleteExperiment } from "@/lib/intel-data";
 import { generateDiscoveries, generateRealityGap } from "@/lib/intelligence.functions";
 import { concludeExperiment } from "@/lib/experiments.functions";
-import { Sparkles, Lightbulb, TrendingDown, FlaskConical, Plus, Loader2, X, CheckCheck } from "lucide-react";
+import { Sparkles, Lightbulb, TrendingDown, FlaskConical, Plus, Loader2, X, CheckCheck, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { ymd } from "@/lib/date-utils";
 
