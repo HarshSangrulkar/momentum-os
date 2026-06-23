@@ -39,7 +39,7 @@ function TodayPage() {
   const { data: cats = [] } = useCategories();
   // Fetch logs covering carousel + 30d analytics range
   const { data: logs = [] } = useLogs(ymd(last30[0]), ymd(addD(today, 3)));
-  const upsertCheck = useUpsertDailyLog();
+  
 
   const sortDaily = (list: typeof tasks) =>
     list.slice().sort((a, b) => {
