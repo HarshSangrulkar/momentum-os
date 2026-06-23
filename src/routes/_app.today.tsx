@@ -1,10 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useTasks, useLogs, useCategories, useToggleTaskLog, useUpsertNote, useCreateTask } from "@/lib/data";
-import { useDailyLogs, useUpsertDailyLog } from "@/lib/intel-data";
 import { ymd, lastNDays, weekStart, weekEnd, fmt, addD } from "@/lib/date-utils";
 import { scoreFor, rangeScore, currentStreak, taskActiveOn } from "@/lib/scoring";
-import { Check, Flame, NotebookPen, Clock, ChevronLeft, ChevronRight, Plus, Smile, Battery, Moon as MoonIcon, Star } from "lucide-react";
+import { Check, Flame, NotebookPen, Clock, ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
