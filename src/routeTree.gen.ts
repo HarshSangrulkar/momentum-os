@@ -16,6 +16,7 @@ import { Route as ApiChatRouteImport } from './routes/api.chat'
 import { Route as AppTodayRouteImport } from './routes/_app.today'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppReportsRouteImport } from './routes/_app.reports'
+import { Route as AppLabRouteImport } from './routes/_app.lab'
 import { Route as AppGoalsRouteImport } from './routes/_app.goals'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppCoachRouteImport } from './routes/_app.coach'
@@ -55,6 +56,11 @@ const AppReportsRoute = AppReportsRouteImport.update({
   path: '/reports',
   getParentRoute: () => AppRoute,
 } as any)
+const AppLabRoute = AppLabRouteImport.update({
+  id: '/lab',
+  path: '/lab',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppGoalsRoute = AppGoalsRouteImport.update({
   id: '/goals',
   path: '/goals',
@@ -83,6 +89,7 @@ export interface FileRoutesByFullPath {
   '/coach': typeof AppCoachRoute
   '/dashboard': typeof AppDashboardRoute
   '/goals': typeof AppGoalsRoute
+  '/lab': typeof AppLabRoute
   '/reports': typeof AppReportsRoute
   '/settings': typeof AppSettingsRoute
   '/today': typeof AppTodayRoute
@@ -95,6 +102,7 @@ export interface FileRoutesByTo {
   '/coach': typeof AppCoachRoute
   '/dashboard': typeof AppDashboardRoute
   '/goals': typeof AppGoalsRoute
+  '/lab': typeof AppLabRoute
   '/reports': typeof AppReportsRoute
   '/settings': typeof AppSettingsRoute
   '/today': typeof AppTodayRoute
@@ -109,6 +117,7 @@ export interface FileRoutesById {
   '/_app/coach': typeof AppCoachRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/goals': typeof AppGoalsRoute
+  '/_app/lab': typeof AppLabRoute
   '/_app/reports': typeof AppReportsRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/today': typeof AppTodayRoute
@@ -123,6 +132,7 @@ export interface FileRouteTypes {
     | '/coach'
     | '/dashboard'
     | '/goals'
+    | '/lab'
     | '/reports'
     | '/settings'
     | '/today'
@@ -135,6 +145,7 @@ export interface FileRouteTypes {
     | '/coach'
     | '/dashboard'
     | '/goals'
+    | '/lab'
     | '/reports'
     | '/settings'
     | '/today'
@@ -148,6 +159,7 @@ export interface FileRouteTypes {
     | '/_app/coach'
     | '/_app/dashboard'
     | '/_app/goals'
+    | '/_app/lab'
     | '/_app/reports'
     | '/_app/settings'
     | '/_app/today'
@@ -212,6 +224,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppReportsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/lab': {
+      id: '/_app/lab'
+      path: '/lab'
+      fullPath: '/lab'
+      preLoaderRoute: typeof AppLabRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/goals': {
       id: '/_app/goals'
       path: '/goals'
@@ -248,6 +267,7 @@ interface AppRouteChildren {
   AppCoachRoute: typeof AppCoachRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppGoalsRoute: typeof AppGoalsRoute
+  AppLabRoute: typeof AppLabRoute
   AppReportsRoute: typeof AppReportsRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppTodayRoute: typeof AppTodayRoute
@@ -258,6 +278,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppCoachRoute: AppCoachRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppGoalsRoute: AppGoalsRoute,
+  AppLabRoute: AppLabRoute,
   AppReportsRoute: AppReportsRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppTodayRoute: AppTodayRoute,
