@@ -7,10 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { useInsights, useDismissInsight, useExperiments, useCreateExperiment } from "@/lib/intel-data";
+import { useInsights, useDismissInsight, useExperiments, useCreateExperiment, useDeleteExperiment } from "@/lib/intel-data";
 import { generateDiscoveries, generateRealityGap } from "@/lib/intelligence.functions";
 import { concludeExperiment } from "@/lib/experiments.functions";
-import { Sparkles, Lightbulb, TrendingDown, FlaskConical, Plus, Loader2, X, CheckCheck } from "lucide-react";
+import { Sparkles, Lightbulb, TrendingDown, FlaskConical, Plus, Loader2, X, CheckCheck, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { ymd } from "@/lib/date-utils";
 
@@ -198,6 +198,7 @@ function RealityGapTab() {
 function ExperimentsTab() {
   const { data: experiments = [] } = useExperiments();
   const create = useCreateExperiment();
+  const del = useDeleteExperiment();
   const conclude = useServerFn(concludeExperiment);
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
@@ -318,6 +319,22 @@ function ExperimentsTab() {
                     Conclude
                   </Button>
                 )}
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => {
+                    if (confirm(`Delete experiment "${e.title}"? This cannot be undone.`)) {
+                      del.mutate(e.id, {
+                        onSuccess: () => toast.success("Experiment deleted"),
+                        onError: (err: any) => toast.error(err.message),
+                      });
+                    }
+                  }}
+                  aria-label="Delete experiment"
+                  className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </div>
               {e.conclusion && (
                 <div className="mt-3 rounded-xl border border-border bg-surface-2 p-3 text-sm leading-relaxed">

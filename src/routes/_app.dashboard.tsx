@@ -1,10 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTasks, useLogs, useCategories } from "@/lib/data";
 import { useDailyLogs, useLongTermGoals, useInsights, useDismissInsight } from "@/lib/intel-data";
 import { ymd, lastNDays, weekStart, weekEnd, fmt } from "@/lib/date-utils";
 import { scoreFor, rangeScore, currentStreak } from "@/lib/scoring";
 import { computeForecast } from "@/lib/behavioral";
+import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from "@/components/ui/carousel";
 import { Sparkles, Flame, Target, TrendingUp, ArrowRight, X, Calendar, FlaskConical, Lightbulb } from "lucide-react";
 
 export const Route = createFileRoute("/_app/dashboard")({
@@ -116,36 +117,14 @@ function DashboardPage() {
         </Link>
       )}
 
-      {/* Top long-term goal */}
+      {/* Long-term goals carousel (auto-rotates) */}
       <section className="mb-4">
         <div className="mb-2 flex items-center justify-between">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Long-term focus</h2>
           <Link to="/longterm" className="text-xs text-primary">Manage</Link>
         </div>
-        {topGoal ? (
-          <Link to="/longterm" className="card-soft block p-4 hover:bg-surface-2">
-            <div className="flex items-center gap-3">
-              <Target className="h-5 w-5 text-primary" />
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-display text-base font-semibold">{topGoal.title}</p>
-                {topGoal.target_metric?.target ? (
-                  <>
-                    <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted">
-                      <div
-                        className="h-full rounded-full bg-primary"
-                        style={{ width: `${Math.min(100, Math.round(((topGoal.target_metric.current ?? 0) / (topGoal.target_metric.target as number)) * 100))}%` }}
-                      />
-                    </div>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {topGoal.target_metric.current ?? 0} / {topGoal.target_metric.target} {topGoal.target_metric.unit ?? ""}
-                    </p>
-                  </>
-                ) : (
-                  <p className="text-xs text-muted-foreground">No target metric set</p>
-                )}
-              </div>
-            </div>
-          </Link>
+        {activeGoals.length > 0 ? (
+          <GoalsCarousel goals={activeGoals} />
         ) : (
           <Link to="/longterm" className="card-soft flex items-center justify-between p-4 text-sm text-muted-foreground hover:bg-surface-2">
             <span>Define a long-term goal so the AI can break it into a real plan.</span>
@@ -153,6 +132,7 @@ function DashboardPage() {
           </Link>
         )}
       </section>
+
 
       {/* Forecasts */}
       {forecasts.length > 0 && (
@@ -221,5 +201,61 @@ function Sparkline({ values, className }: { values: number[]; className?: string
     <svg viewBox={`0 0 ${w} ${h}`} className={className} preserveAspectRatio="none">
       <polyline points={pts} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
+  );
+}
+
+function GoalsCarousel({ goals }: { goals: ReturnType<typeof useLongTermGoals>["data"] extends (infer T)[] | undefined ? T[] : never }) {
+  const [api, setApi] = useState<CarouselApi>();
+  useEffect(() => {
+    if (!api || goals.length < 2) return;
+    const id = setInterval(() => {
+      if (!api) return;
+      if (api.canScrollNext()) api.scrollNext();
+      else api.scrollTo(0);
+    }, 2000);
+    return () => clearInterval(id);
+  }, [api, goals.length]);
+
+  return (
+    <Carousel opts={{ loop: true, align: "start" }} setApi={setApi}>
+      <CarouselContent className="-ml-0">
+        {goals.map((g) => {
+          const target = g.target_metric?.target as number | undefined;
+          const current = g.target_metric?.current ?? 0;
+          const pct = target ? Math.min(100, Math.round((current / target) * 100)) : null;
+          return (
+            <CarouselItem key={g.id} className="basis-full pl-0">
+              <Link to="/longterm" className="card-soft block p-4 hover:bg-surface-2">
+                <div className="flex items-center gap-3">
+                  <Target className="h-5 w-5 shrink-0 text-primary" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-display text-base font-semibold">{g.title}</p>
+                    {pct !== null ? (
+                      <>
+                        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted">
+                          <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${pct}%` }} />
+                        </div>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {current} / {target} {g.target_metric?.unit ?? ""} · {pct}%
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">No target metric set</p>
+                    )}
+                  </div>
+                </div>
+              </Link>
+            </CarouselItem>
+          );
+        })}
+      </CarouselContent>
+      {goals.length > 1 && (
+        <div className="mt-2 flex justify-center gap-1">
+          {goals.map((_, i) => (
+            <span key={i} className="h-1 w-4 rounded-full bg-muted" />
+          ))}
+        </div>
+      )}
+    </Carousel>
   );
 }

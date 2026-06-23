@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { LayoutDashboard, Calendar, Target, FlaskConical, Sparkles, BarChart3, Settings as Cog, FileText, Sun, Moon, MoreHorizontal } from "lucide-react";
+import { LayoutDashboard, Calendar, Target, FlaskConical, Sparkles, BarChart3, Settings as Cog, FileText, Sun, Moon, MoreHorizontal, User as UserIcon } from "lucide-react";
 import { useTheme } from "@/lib/theme";
 import type { ReactNode } from "react";
 import { useState } from "react";
@@ -14,6 +14,7 @@ const primaryNav = [
 ] as const;
 
 const overflowNav = [
+  { to: "/profile", label: "Profile", icon: UserIcon },
   { to: "/longterm", label: "Long-term goals", icon: Target },
   { to: "/analytics", label: "Stats", icon: BarChart3 },
   { to: "/reports", label: "Reports", icon: FileText },
