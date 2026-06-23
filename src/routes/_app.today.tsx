@@ -115,10 +115,6 @@ function TodayPage() {
         <StreakCard streak={streak} />
       </div>
 
-      <CheckInCard
-        value={todayCheckIn}
-        onChange={(patch) => upsertCheck.mutate({ log_date: todayKey, ...patch })}
-      />
 
 
       <section className="mb-8">
