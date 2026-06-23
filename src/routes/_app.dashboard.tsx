@@ -1,10 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTasks, useLogs, useCategories } from "@/lib/data";
 import { useDailyLogs, useLongTermGoals, useInsights, useDismissInsight } from "@/lib/intel-data";
 import { ymd, lastNDays, weekStart, weekEnd, fmt } from "@/lib/date-utils";
 import { scoreFor, rangeScore, currentStreak } from "@/lib/scoring";
 import { computeForecast } from "@/lib/behavioral";
+import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from "@/components/ui/carousel";
 import { Sparkles, Flame, Target, TrendingUp, ArrowRight, X, Calendar, FlaskConical, Lightbulb } from "lucide-react";
 
 export const Route = createFileRoute("/_app/dashboard")({
