@@ -118,6 +118,12 @@ function TodayPage() {
         <StreakCard streak={streak} />
       </div>
 
+      <CheckInCard
+        value={todayCheckIn}
+        onChange={(patch) => upsertCheck.mutate({ log_date: todayKey, ...patch })}
+      />
+
+
       <section className="mb-8">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Daily habits</h2>
