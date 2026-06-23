@@ -225,10 +225,10 @@ export function useCreateExperiment() {
 export function useEndExperiment() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, conclusion, conclusion_data }: { id: string; conclusion: string; conclusion_data: Record<string, unknown> }) => {
+    mutationFn: async ({ id, conclusion, conclusion_data }: { id: string; conclusion: string; conclusion_data: Record<string, any> }) => {
       const { error } = await supabase
         .from("experiments")
-        .update({ status: "completed", conclusion, conclusion_data })
+        .update({ status: "completed", conclusion, conclusion_data: conclusion_data as any })
         .eq("id", id);
       if (error) throw error;
     },
