@@ -414,21 +414,63 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          bio: string | null
           created_at: string
+          date_of_birth: string | null
           display_name: string | null
+          focus_areas: string[] | null
+          full_name: string | null
+          gender: string | null
+          height_cm: number | null
           id: string
+          location: string | null
+          motivation: string | null
+          occupation: string | null
+          sleep_time: string | null
+          timezone: string | null
+          updated_at: string
+          wake_time: string | null
+          weight_kg: number | null
         }
         Insert: {
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string
+          date_of_birth?: string | null
           display_name?: string | null
+          focus_areas?: string[] | null
+          full_name?: string | null
+          gender?: string | null
+          height_cm?: number | null
           id: string
+          location?: string | null
+          motivation?: string | null
+          occupation?: string | null
+          sleep_time?: string | null
+          timezone?: string | null
+          updated_at?: string
+          wake_time?: string | null
+          weight_kg?: number | null
         }
         Update: {
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string
+          date_of_birth?: string | null
           display_name?: string | null
+          focus_areas?: string[] | null
+          full_name?: string | null
+          gender?: string | null
+          height_cm?: number | null
           id?: string
+          location?: string | null
+          motivation?: string | null
+          occupation?: string | null
+          sleep_time?: string | null
+          timezone?: string | null
+          updated_at?: string
+          wake_time?: string | null
+          weight_kg?: number | null
         }
         Relationships: []
       }
