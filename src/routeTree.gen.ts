@@ -16,9 +16,13 @@ import { Route as ApiChatRouteImport } from './routes/api.chat'
 import { Route as AppTodayRouteImport } from './routes/_app.today'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppReportsRouteImport } from './routes/_app.reports'
+import { Route as AppLongtermRouteImport } from './routes/_app.longterm'
+import { Route as AppLabRouteImport } from './routes/_app.lab'
 import { Route as AppGoalsRouteImport } from './routes/_app.goals'
+import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppCoachRouteImport } from './routes/_app.coach'
 import { Route as AppAnalyticsRouteImport } from './routes/_app.analytics'
+import { Route as ApiPublicHooksWeeklyReportRouteImport } from './routes/api.public.hooks.weekly-report'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -54,9 +58,24 @@ const AppReportsRoute = AppReportsRouteImport.update({
   path: '/reports',
   getParentRoute: () => AppRoute,
 } as any)
+const AppLongtermRoute = AppLongtermRouteImport.update({
+  id: '/longterm',
+  path: '/longterm',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppLabRoute = AppLabRouteImport.update({
+  id: '/lab',
+  path: '/lab',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppGoalsRoute = AppGoalsRouteImport.update({
   id: '/goals',
   path: '/goals',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDashboardRoute = AppDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => AppRoute,
 } as any)
 const AppCoachRoute = AppCoachRouteImport.update({
@@ -69,28 +88,42 @@ const AppAnalyticsRoute = AppAnalyticsRouteImport.update({
   path: '/analytics',
   getParentRoute: () => AppRoute,
 } as any)
+const ApiPublicHooksWeeklyReportRoute =
+  ApiPublicHooksWeeklyReportRouteImport.update({
+    id: '/api/public/hooks/weekly-report',
+    path: '/api/public/hooks/weekly-report',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/analytics': typeof AppAnalyticsRoute
   '/coach': typeof AppCoachRoute
+  '/dashboard': typeof AppDashboardRoute
   '/goals': typeof AppGoalsRoute
+  '/lab': typeof AppLabRoute
+  '/longterm': typeof AppLongtermRoute
   '/reports': typeof AppReportsRoute
   '/settings': typeof AppSettingsRoute
   '/today': typeof AppTodayRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/public/hooks/weekly-report': typeof ApiPublicHooksWeeklyReportRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/analytics': typeof AppAnalyticsRoute
   '/coach': typeof AppCoachRoute
+  '/dashboard': typeof AppDashboardRoute
   '/goals': typeof AppGoalsRoute
+  '/lab': typeof AppLabRoute
+  '/longterm': typeof AppLongtermRoute
   '/reports': typeof AppReportsRoute
   '/settings': typeof AppSettingsRoute
   '/today': typeof AppTodayRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/public/hooks/weekly-report': typeof ApiPublicHooksWeeklyReportRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -99,11 +132,15 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_app/analytics': typeof AppAnalyticsRoute
   '/_app/coach': typeof AppCoachRoute
+  '/_app/dashboard': typeof AppDashboardRoute
   '/_app/goals': typeof AppGoalsRoute
+  '/_app/lab': typeof AppLabRoute
+  '/_app/longterm': typeof AppLongtermRoute
   '/_app/reports': typeof AppReportsRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/today': typeof AppTodayRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/public/hooks/weekly-report': typeof ApiPublicHooksWeeklyReportRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -112,22 +149,30 @@ export interface FileRouteTypes {
     | '/auth'
     | '/analytics'
     | '/coach'
+    | '/dashboard'
     | '/goals'
+    | '/lab'
+    | '/longterm'
     | '/reports'
     | '/settings'
     | '/today'
     | '/api/chat'
+    | '/api/public/hooks/weekly-report'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
     | '/analytics'
     | '/coach'
+    | '/dashboard'
     | '/goals'
+    | '/lab'
+    | '/longterm'
     | '/reports'
     | '/settings'
     | '/today'
     | '/api/chat'
+    | '/api/public/hooks/weekly-report'
   id:
     | '__root__'
     | '/'
@@ -135,11 +180,15 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_app/analytics'
     | '/_app/coach'
+    | '/_app/dashboard'
     | '/_app/goals'
+    | '/_app/lab'
+    | '/_app/longterm'
     | '/_app/reports'
     | '/_app/settings'
     | '/_app/today'
     | '/api/chat'
+    | '/api/public/hooks/weekly-report'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -147,6 +196,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRoute
   ApiChatRoute: typeof ApiChatRoute
+  ApiPublicHooksWeeklyReportRoute: typeof ApiPublicHooksWeeklyReportRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -200,11 +250,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppReportsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/longterm': {
+      id: '/_app/longterm'
+      path: '/longterm'
+      fullPath: '/longterm'
+      preLoaderRoute: typeof AppLongtermRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/lab': {
+      id: '/_app/lab'
+      path: '/lab'
+      fullPath: '/lab'
+      preLoaderRoute: typeof AppLabRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/goals': {
       id: '/_app/goals'
       path: '/goals'
       fullPath: '/goals'
       preLoaderRoute: typeof AppGoalsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/dashboard': {
+      id: '/_app/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/coach': {
@@ -221,13 +292,23 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAnalyticsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/api/public/hooks/weekly-report': {
+      id: '/api/public/hooks/weekly-report'
+      path: '/api/public/hooks/weekly-report'
+      fullPath: '/api/public/hooks/weekly-report'
+      preLoaderRoute: typeof ApiPublicHooksWeeklyReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 interface AppRouteChildren {
   AppAnalyticsRoute: typeof AppAnalyticsRoute
   AppCoachRoute: typeof AppCoachRoute
+  AppDashboardRoute: typeof AppDashboardRoute
   AppGoalsRoute: typeof AppGoalsRoute
+  AppLabRoute: typeof AppLabRoute
+  AppLongtermRoute: typeof AppLongtermRoute
   AppReportsRoute: typeof AppReportsRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppTodayRoute: typeof AppTodayRoute
@@ -236,7 +317,10 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppAnalyticsRoute: AppAnalyticsRoute,
   AppCoachRoute: AppCoachRoute,
+  AppDashboardRoute: AppDashboardRoute,
   AppGoalsRoute: AppGoalsRoute,
+  AppLabRoute: AppLabRoute,
+  AppLongtermRoute: AppLongtermRoute,
   AppReportsRoute: AppReportsRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppTodayRoute: AppTodayRoute,
@@ -249,17 +333,8 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRoute,
   ApiChatRoute: ApiChatRoute,
+  ApiPublicHooksWeeklyReportRoute: ApiPublicHooksWeeklyReportRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

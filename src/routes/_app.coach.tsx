@@ -3,6 +3,7 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { useMemo, useRef, useEffect, useState } from "react";
 import { useTasks, useLogs, useCategories } from "@/lib/data";
+import { useDailyLogs, useLongTermGoals, useInsights } from "@/lib/intel-data";
 import { ymd, lastNDays } from "@/lib/date-utils";
 import { scoreFor, rangeScore, currentStreak, longestStreak } from "@/lib/scoring";
 import { Send, Sparkles, Loader2 } from "lucide-react";
@@ -18,8 +19,14 @@ function CoachPage() {
   const { data: cats = [] } = useCategories();
   const days30 = useMemo(() => lastNDays(30), []);
   const { data: logs = [] } = useLogs(ymd(days30[0]), ymd(new Date()));
+  const { data: dailyLogs = [] } = useDailyLogs(ymd(days30[0]), ymd(new Date()));
+  const { data: longTermGoals = [] } = useLongTermGoals();
+  const { data: insights = [] } = useInsights();
 
-  const context = useMemo(() => buildContext(tasks, cats, logs), [tasks, cats, logs]);
+  const context = useMemo(
+    () => buildContext(tasks, cats, logs, dailyLogs, longTermGoals, insights),
+    [tasks, cats, logs, dailyLogs, longTermGoals, insights],
+  );
 
   const transport = useMemo(
     () => new DefaultChatTransport({ api: "/api/chat", body: { context } }),
@@ -126,7 +133,7 @@ function CoachPage() {
   );
 }
 
-function buildContext(tasks: any[], cats: any[], logs: any[]) {
+function buildContext(tasks: any[], cats: any[], logs: any[], dailyLogs: any[], goals: any[], insights: any[]) {
   const today = new Date();
   const today30 = lastNDays(30);
   const today7 = lastNDays(7);
@@ -158,6 +165,21 @@ function buildContext(tasks: any[], cats: any[], logs: any[]) {
       return { date: l.log_date, task: t?.title, note: l.notes };
     });
 
+  const checkIns = dailyLogs.slice(-14).map((d: any) => ({
+    date: d.log_date, mood: d.mood, energy: d.energy, sleep: d.sleep_hours, prod: d.productivity_rating, note: d.note,
+  }));
+
+  const longTerm = goals.filter((g: any) => g.status === "active").map((g: any) => ({
+    title: g.title,
+    description: g.description,
+    target: g.target_metric,
+    target_date: g.target_date,
+  }));
+
+  const discoveries = insights.filter((i: any) => i.kind === "discovery").slice(0, 8).map((i: any) => ({
+    title: i.title, body: i.body, confidence: i.confidence,
+  }));
+
   return {
     today: ymd(today),
     scores: { today: todayScore, last7days: weekScore, last30days: monthScore },
@@ -165,5 +187,9 @@ function buildContext(tasks: any[], cats: any[], logs: any[]) {
     categories: catSummary,
     tasks: tasks.map((t) => ({ title: t.title, frequency: t.frequency, weight: t.weightage })),
     recentNotes,
+    checkIns,
+    longTermGoals: longTerm,
+    behavioralDiscoveries: discoveries,
   };
 }
+

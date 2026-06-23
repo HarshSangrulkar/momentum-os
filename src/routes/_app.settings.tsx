@@ -1,12 +1,16 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/auth";
 import { useTheme } from "@/lib/theme";
 import { useCategories, useCreateCategory, useDeleteCategory } from "@/lib/data";
+import { useNotifPrefs, useUpsertNotifPrefs } from "@/lib/intel-data";
+import { generateWeeklyReport } from "@/lib/intelligence.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LogOut, Plus, Sun, Moon, Trash2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { LogOut, Plus, Sun, Moon, Trash2, Bell, FileText, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/settings")({
@@ -23,9 +27,36 @@ function SettingsPage() {
   const create = useCreateCategory();
   const del = useDeleteCategory();
   const navigate = useNavigate();
+  const { data: notif } = useNotifPrefs();
+  const upsertNotif = useUpsertNotifPrefs();
+  const runWeekly = useServerFn(generateWeeklyReport);
+  const [reportBusy, setReportBusy] = useState(false);
 
   const [name, setName] = useState("");
   const [color, setColor] = useState(PALETTE[0]);
+
+  const triggerWeekly = async () => {
+    setReportBusy(true);
+    try {
+      await runWeekly();
+      toast.success("Weekly report ready — see Reports");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed");
+    } finally {
+      setReportBusy(false);
+    }
+  };
+
+  const requestNotifPerm = async () => {
+    if (typeof Notification === "undefined") return toast.error("Browser notifications not supported");
+    const res = await Notification.requestPermission();
+    if (res === "granted") {
+      new Notification("Momentum", { body: "Smart nudges are on. I'll only ping when it matters." });
+      toast.success("Notifications enabled");
+    } else {
+      toast.error("Permission denied");
+    }
+  };
 
   const onLogout = async () => {
     await signOut();
@@ -68,6 +99,44 @@ function SettingsPage() {
           <span className="text-xs text-muted-foreground">Tap to switch</span>
         </button>
       </section>
+
+      <section className="card-soft mt-4 p-5">
+        <p className="text-xs uppercase tracking-wider text-muted-foreground">Intelligence</p>
+        <div className="mt-3 flex items-center justify-between rounded-xl border border-border bg-surface-2 p-3">
+          <div className="flex items-center gap-3">
+            <Bell className="h-5 w-5 text-primary" />
+            <div>
+              <p className="font-medium">Smart nudges</p>
+              <p className="text-xs text-muted-foreground">Context-aware, not generic reminders.</p>
+            </div>
+          </div>
+          <Switch
+            checked={notif?.smart_nudges ?? true}
+            onCheckedChange={(v) => upsertNotif.mutate({ smart_nudges: v })}
+          />
+        </div>
+        <div className="mt-2 flex items-center justify-between rounded-xl border border-border bg-surface-2 p-3">
+          <div className="flex items-center gap-3">
+            <FileText className="h-5 w-5 text-primary" />
+            <div>
+              <p className="font-medium">Weekly report</p>
+              <p className="text-xs text-muted-foreground">AI-written review every Sunday.</p>
+            </div>
+          </div>
+          <Switch
+            checked={notif?.weekly_report ?? true}
+            onCheckedChange={(v) => upsertNotif.mutate({ weekly_report: v })}
+          />
+        </div>
+        <Button variant="outline" onClick={requestNotifPerm} className="mt-3 w-full rounded-full">
+          Enable browser notifications
+        </Button>
+        <Button onClick={triggerWeekly} disabled={reportBusy} className="mt-2 w-full rounded-full">
+          {reportBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+          Generate weekly report now
+        </Button>
+      </section>
+
 
       <section className="card-soft mt-4 p-5">
         <p className="text-xs uppercase tracking-wider text-muted-foreground">Categories</p>

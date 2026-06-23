@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useTasks, useLogs, useCategories, useToggleTaskLog, useUpsertNote, useCreateTask } from "@/lib/data";
+import { useDailyLogs, useUpsertDailyLog } from "@/lib/intel-data";
 import { ymd, lastNDays, weekStart, weekEnd, fmt, addD } from "@/lib/date-utils";
 import { scoreFor, rangeScore, currentStreak, taskActiveOn } from "@/lib/scoring";
-import { Check, Flame, NotebookPen, Clock, ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { Check, Flame, NotebookPen, Clock, ChevronLeft, ChevronRight, Plus, Smile, Battery, Moon as MoonIcon, Star } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -39,6 +40,9 @@ function TodayPage() {
   const { data: cats = [] } = useCategories();
   // Fetch logs covering carousel + 30d analytics range
   const { data: logs = [] } = useLogs(ymd(last30[0]), ymd(addD(today, 3)));
+  const { data: dailyLogs = [] } = useDailyLogs(todayKey, todayKey);
+  const todayCheckIn = dailyLogs[0];
+  const upsertCheck = useUpsertDailyLog();
 
   const sortDaily = (list: typeof tasks) =>
     list.slice().sort((a, b) => {
@@ -113,6 +117,12 @@ function TodayPage() {
         <ScoreCard label="30 days" value={monthScore} />
         <StreakCard streak={streak} />
       </div>
+
+      <CheckInCard
+        value={todayCheckIn}
+        onChange={(patch) => upsertCheck.mutate({ log_date: todayKey, ...patch })}
+      />
+
 
       <section className="mb-8">
         <div className="mb-3 flex items-center justify-between">
@@ -519,5 +529,124 @@ function TaskRow({
         <NotebookPen className="h-4 w-4" />
       </button>
     </li>
+  );
+}
+
+const MOOD_OPTS: { key: "excellent" | "good" | "average" | "bad"; emoji: string; label: string }[] = [
+  { key: "excellent", emoji: "😄", label: "Great" },
+  { key: "good", emoji: "🙂", label: "Good" },
+  { key: "average", emoji: "😐", label: "Meh" },
+  { key: "bad", emoji: "😞", label: "Bad" },
+];
+
+const ENERGY_OPTS: { key: "high" | "medium" | "low"; dots: number; label: string }[] = [
+  { key: "high", dots: 3, label: "High" },
+  { key: "medium", dots: 2, label: "Medium" },
+  { key: "low", dots: 1, label: "Low" },
+];
+
+function CheckInCard({
+  value,
+  onChange,
+}: {
+  value: { mood: any; energy: any; sleep_hours: number | null; productivity_rating: number | null; note: string | null } | undefined;
+  onChange: (patch: { mood?: any; energy?: any; sleep_hours?: number | null; productivity_rating?: number | null; note?: string | null }) => void;
+}) {
+  const [openNote, setOpenNote] = useState(false);
+  const [noteDraft, setNoteDraft] = useState(value?.note ?? "");
+  useEffect(() => { setNoteDraft(value?.note ?? ""); }, [value?.note]);
+  const sleepVal = value?.sleep_hours ?? "";
+  const rating = value?.productivity_rating ?? 0;
+
+  return (
+    <section className="card-soft mb-6 bg-gradient-to-br from-accent/30 to-transparent p-4">
+      <div className="mb-3 flex items-center justify-between">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Daily check-in</p>
+        <p className="text-[10px] text-muted-foreground">{value ? "Saved" : "Takes 10 seconds"}</p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div>
+          <div className="mb-1 flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground"><Smile className="h-3 w-3" /> Mood</div>
+          <div className="flex gap-1">
+            {MOOD_OPTS.map((m) => (
+              <button
+                key={m.key}
+                onClick={() => onChange({ mood: m.key })}
+                title={m.label}
+                className={`grid h-9 w-9 place-items-center rounded-full text-base transition ${value?.mood === m.key ? "bg-primary text-primary-foreground" : "bg-surface-2 hover:bg-accent"}`}
+              >
+                {m.emoji}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <div className="mb-1 flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground"><Battery className="h-3 w-3" /> Energy</div>
+          <div className="flex gap-1">
+            {ENERGY_OPTS.map((e) => (
+              <button
+                key={e.key}
+                onClick={() => onChange({ energy: e.key })}
+                title={e.label}
+                className={`h-9 flex-1 rounded-full text-[10px] font-medium transition ${value?.energy === e.key ? "bg-primary text-primary-foreground" : "bg-surface-2 hover:bg-accent"}`}
+              >
+                {e.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <div className="mb-1 flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground"><MoonIcon className="h-3 w-3" /> Sleep (h)</div>
+          <input
+            type="number"
+            step="0.5"
+            min={0}
+            max={14}
+            value={sleepVal}
+            onChange={(e) => onChange({ sleep_hours: e.target.value === "" ? null : Number(e.target.value) })}
+            placeholder="7.5"
+            className="h-9 w-full rounded-full border border-border bg-surface-2 px-3 text-center text-sm outline-none focus:border-primary"
+          />
+        </div>
+
+        <div>
+          <div className="mb-1 flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground"><Star className="h-3 w-3" /> Productivity</div>
+          <div className="flex gap-0.5">
+            {[1, 2, 3, 4, 5].map((n) => (
+              <button
+                key={n}
+                onClick={() => onChange({ productivity_rating: n })}
+                aria-label={`${n} stars`}
+                className="p-1"
+              >
+                <Star className={`h-5 w-5 ${rating >= n ? "fill-primary text-primary" : "text-muted-foreground"}`} />
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <button
+        onClick={() => setOpenNote(true)}
+        className="mt-3 flex w-full items-center gap-2 rounded-xl border border-dashed border-border px-3 py-2 text-left text-xs text-muted-foreground hover:border-primary/60 hover:text-primary"
+      >
+        <NotebookPen className="h-3.5 w-3.5" />
+        {value?.note ? <span className="truncate">{value.note}</span> : <span>How did today actually feel?</span>}
+      </button>
+
+      <Dialog open={openNote} onOpenChange={setOpenNote}>
+        <DialogContent className="rounded-2xl">
+          <DialogHeader><DialogTitle className="font-display">Today's note</DialogTitle></DialogHeader>
+          <Textarea autoFocus value={noteDraft} onChange={(e) => setNoteDraft(e.target.value)} className="min-h-32" placeholder="What's on your mind?" />
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => setOpenNote(false)}>Cancel</Button>
+            <Button onClick={() => { onChange({ note: noteDraft }); setOpenNote(false); toast.success("Saved"); }}>Save</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </section>
   );
 }
