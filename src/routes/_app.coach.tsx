@@ -3,6 +3,7 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { useMemo, useRef, useEffect, useState } from "react";
 import { useTasks, useLogs, useCategories } from "@/lib/data";
+import { useDailyLogs, useLongTermGoals, useInsights } from "@/lib/intel-data";
 import { ymd, lastNDays } from "@/lib/date-utils";
 import { scoreFor, rangeScore, currentStreak, longestStreak } from "@/lib/scoring";
 import { Send, Sparkles, Loader2 } from "lucide-react";
@@ -18,8 +19,14 @@ function CoachPage() {
   const { data: cats = [] } = useCategories();
   const days30 = useMemo(() => lastNDays(30), []);
   const { data: logs = [] } = useLogs(ymd(days30[0]), ymd(new Date()));
+  const { data: dailyLogs = [] } = useDailyLogs(ymd(days30[0]), ymd(new Date()));
+  const { data: longTermGoals = [] } = useLongTermGoals();
+  const { data: insights = [] } = useInsights();
 
-  const context = useMemo(() => buildContext(tasks, cats, logs), [tasks, cats, logs]);
+  const context = useMemo(
+    () => buildContext(tasks, cats, logs, dailyLogs, longTermGoals, insights),
+    [tasks, cats, logs, dailyLogs, longTermGoals, insights],
+  );
 
   const transport = useMemo(
     () => new DefaultChatTransport({ api: "/api/chat", body: { context } }),
