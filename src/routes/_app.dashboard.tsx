@@ -117,36 +117,14 @@ function DashboardPage() {
         </Link>
       )}
 
-      {/* Top long-term goal */}
+      {/* Long-term goals carousel (auto-rotates) */}
       <section className="mb-4">
         <div className="mb-2 flex items-center justify-between">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Long-term focus</h2>
           <Link to="/longterm" className="text-xs text-primary">Manage</Link>
         </div>
-        {topGoal ? (
-          <Link to="/longterm" className="card-soft block p-4 hover:bg-surface-2">
-            <div className="flex items-center gap-3">
-              <Target className="h-5 w-5 text-primary" />
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-display text-base font-semibold">{topGoal.title}</p>
-                {topGoal.target_metric?.target ? (
-                  <>
-                    <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted">
-                      <div
-                        className="h-full rounded-full bg-primary"
-                        style={{ width: `${Math.min(100, Math.round(((topGoal.target_metric.current ?? 0) / (topGoal.target_metric.target as number)) * 100))}%` }}
-                      />
-                    </div>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {topGoal.target_metric.current ?? 0} / {topGoal.target_metric.target} {topGoal.target_metric.unit ?? ""}
-                    </p>
-                  </>
-                ) : (
-                  <p className="text-xs text-muted-foreground">No target metric set</p>
-                )}
-              </div>
-            </div>
-          </Link>
+        {activeGoals.length > 0 ? (
+          <GoalsCarousel goals={activeGoals} />
         ) : (
           <Link to="/longterm" className="card-soft flex items-center justify-between p-4 text-sm text-muted-foreground hover:bg-surface-2">
             <span>Define a long-term goal so the AI can break it into a real plan.</span>
@@ -154,6 +132,7 @@ function DashboardPage() {
           </Link>
         )}
       </section>
+
 
       {/* Forecasts */}
       {forecasts.length > 0 && (
